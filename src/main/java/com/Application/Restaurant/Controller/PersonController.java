@@ -22,6 +22,10 @@ public class PersonController {
     public ResponseEntity<Object> SignUP(@RequestBody singUpDTO singUpDTO){
         return new  ResponseEntity<>(personService.signUp(singUpDTO), HttpStatus.CREATED);
     }
+    @PostMapping("/login")
+    public ResponseEntity<Object> login(@RequestBody loginDTO loginDTO) {
+        return  ResponseEntity.ok(personService.logIn(loginDTO));
+    }
 
     //Build get employee Rest API
     @GetMapping("/{id}")
@@ -49,10 +53,10 @@ public class PersonController {
            personService.deletePerson(iDEmployee);
         return ResponseEntity.ok("Deleting is done");
     }
-    @PostMapping("/login")
-    public ResponseEntity<String> login(@RequestBody loginDTO loginDTO) {
 
+}
 
+/*
         if (personService.logIn(loginDTO).isPresent()) {
 
             PersonDTO personDTO=personService.logIn(loginDTO).get();
@@ -67,7 +71,9 @@ public class PersonController {
             return ResponseEntity.status(401).body("Login failed");
         }
     }
-}
+    */
+
+
 
 
 /*

@@ -130,6 +130,42 @@ public class PersonServiceImpl implements personService {
 
         return myList;
     }
+
+
+    @Override
+    public PersonDTO getPersonByID(Long id) {
+        Person Person = personRepository.findById(id).orElseThrow();
+        return PersonMapper.mapToPersonDTO(Person);
+    }
+
+    @Override
+    public List<PersonDTO> getAllPersons() {
+        List<Person> Persons = personRepository.findAll();
+        List<PersonDTO> PersonDTO = new ArrayList<>();
+        for (int i = 0; i < Persons.size(); i++) {
+            PersonDTO.add(PersonMapper.mapToPersonDTO(Persons.get(i)));
+
+        }
+        return PersonDTO;
+    }
+
+    @Override
+    public PersonDTO updatePerson(Long id, PersonDTO PersonDTO) {
+        Person Person = PersonMapper.mapToPerson(getPersonByID(id));
+        Person.setUsername(PersonDTO.getUsername());
+        Person.setPassword(PersonDTO.getPassword());
+        Person.setEmail(PersonDTO.getEmail());
+        personRepository.save(Person);
+        return PersonMapper.mapToPersonDTO(Person);
+    }
+
+    @Override
+    public void deletePerson(Long id) {
+        Person Person = PersonMapper.mapToPerson(getPersonByID(id));
+        personRepository.delete(Person);
+
+    }
+
     @Override
     public List<Object> logIn(loginDTO loginDTO) {
         List<Object> myList = new ArrayList<>();
@@ -169,43 +205,6 @@ public class PersonServiceImpl implements personService {
 
         return myList;
     }
-
-
-    @Override
-    public PersonDTO getPersonByID(Long id) {
-        Person Person = personRepository.findById(id).orElseThrow();
-        return PersonMapper.mapToPersonDTO(Person);
-    }
-
-    @Override
-    public List<PersonDTO> getAllPersons() {
-        List<Person> Persons = personRepository.findAll();
-        List<PersonDTO> PersonDTO = new ArrayList<>();
-        for (int i = 0; i < Persons.size(); i++) {
-            PersonDTO.add(PersonMapper.mapToPersonDTO(Persons.get(i)));
-
-        }
-        return PersonDTO;
-    }
-
-    @Override
-    public PersonDTO updatePerson(Long id, PersonDTO PersonDTO) {
-        Person Person = PersonMapper.mapToPerson(getPersonByID(id));
-        Person.setUsername(PersonDTO.getUsername());
-        Person.setPassword(PersonDTO.getPassword());
-        Person.setEmail(PersonDTO.getEmail());
-        personRepository.save(Person);
-        return PersonMapper.mapToPersonDTO(Person);
-    }
-
-    @Override
-    public void deletePerson(Long id) {
-        Person Person = PersonMapper.mapToPerson(getPersonByID(id));
-        personRepository.delete(Person);
-
-    }
-
-
 }
 
      /*   Optional<Person> person = personRepository.findByEmailAndPassword(loginDTO.getEmail(), loginDTO.getPassword());
