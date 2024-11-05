@@ -1,14 +1,16 @@
 # Use an official OpenJDK runtime as a parent image
-FROM openjdk:17-jdk-slim
-
-# Set the working directory in the container
+# Build stage
+#
+FROM maven:3.8.3-openjdk-17 AS build
 WORKDIR /app
+COPY . /app/
+RUN mvn clean package
 
-# Copy the JAR file from your target folder (replace with your actual path)
-COPY target/Restaurant.jar app.jar
-
-# Expose the application port (default is 8080 for Spring Boot)
+#
+# Package stage
+#
+FROM openjdk:17-alpine
+WORKDIR /app
+COPY --from=build /app/target/*.jar /app/app.jar
 EXPOSE 8080
-
-# Run the JAR file
-ENTRYPOINT ["java", "-jar", "app.jar"]
+ENTRYPOINT ["java","-jar","app.jar"]r"]
