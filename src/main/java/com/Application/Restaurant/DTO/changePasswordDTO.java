@@ -1,5 +1,6 @@
 package com.Application.Restaurant.DTO;
 
+
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -9,12 +10,10 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class singUpDTO {
-
-    private String username;
-    private String email;
-    private String bio;
-    private String password;
-    private String confirmPassword;
-
+public class changePasswordDTO
+{
+    String oldPassword;
+    String newPassword;
+    String confirmNewPassword;
 }
+

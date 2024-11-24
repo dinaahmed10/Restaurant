@@ -1,15 +1,16 @@
 package com.Application.Restaurant.Controller;
 
-import com.Application.Restaurant.DTO.PersonDTO;
-import com.Application.Restaurant.DTO.loginDTO;
-import com.Application.Restaurant.DTO.singUpDTO;
+import com.Application.Restaurant.DTO.*;
+import com.Application.Restaurant.Exception.PasswordUpdateException;
 import com.Application.Restaurant.Service.personService;
+import com.Application.Restaurant.response.ApiResponse;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.NoSuchElementException;
 
 @RestController
 @AllArgsConstructor
@@ -19,42 +20,91 @@ public class PersonController {
 
     //Build add employee Rest API
     @PostMapping
-    public ResponseEntity<Object> SignUP(@RequestBody singUpDTO singUpDTO){
-        return new  ResponseEntity<>(personService.signUp(singUpDTO), HttpStatus.CREATED);
+    public ResponseEntity<Object> SignUP(@RequestBody singUpDTO singUpDTO) {
+        List<String> validationErrors = personService.checkPassword(singUpDTO.getPassword());
+
+        if (!validationErrors.isEmpty()) {
+            String errorMessage = String.join(", ", validationErrors);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new ApiResponse(false, errorMessage));
+        }
+            return new ResponseEntity<>(personService.signUp(singUpDTO), HttpStatus.CREATED);
+
+
     }
+
     @PostMapping("/login")
     public ResponseEntity<Object> login(@RequestBody loginDTO loginDTO) {
-        return  ResponseEntity.ok(personService.logIn(loginDTO));
+        return ResponseEntity.ok(personService.logIn(loginDTO));
     }
 
     //Build get employee Rest API
-    @GetMapping("/{id}")
-    public ResponseEntity<PersonDTO> getPersonByID(@PathVariable("id") Long iDEmployee){
-        return ResponseEntity.ok( personService.getPersonByID(iDEmployee));
+    @GetMapping("readPerson/{id}")
+    public ResponseEntity<Object> readPerson(@PathVariable("id") Long iDEmployee) {
+        try {
+            return ResponseEntity.ok(personService.readPerson(iDEmployee));
+        } catch (NoSuchElementException ex) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ApiResponse(false, ex.getMessage()));
+
+        }
     }
 
     //Build getAll employee Rest API
     @GetMapping
-    public ResponseEntity<List<PersonDTO>> reportAboutPersons(){
-        List<PersonDTO> Persons= personService.getAllPersons();
+    public ResponseEntity<List<PersonDTO>> reportAboutPersons() {
+        List<PersonDTO> Persons = personService.getAllPersons();
         return ResponseEntity.ok(Persons);
     }
 
     //Build update employee Rest API
-    @PutMapping("/{id}")
-    public ResponseEntity<PersonDTO> updatePerson(@PathVariable("id") Long iDEmployee,@RequestBody PersonDTO PersonDTO){
-        PersonDTO savedPersonDTO= personService.updatePerson(iDEmployee,PersonDTO);
-        return ResponseEntity.ok(savedPersonDTO);
+    @PutMapping("updatePerson/{id}")
+    public ResponseEntity<Object> updatePerson(@PathVariable("id") Long iDEmployee, @RequestBody updatePersonDTO updatePersonDTO) {
+
+        try {
+              personService.updatePerson(iDEmployee, updatePersonDTO);
+            return ResponseEntity.ok(new ApiResponse(true, "successfully updated"));
+        } catch (NoSuchElementException ex) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ApiResponse(false, ex.getMessage()));
+
+        }
     }
 
     //Build delete employee Rest API
-    @DeleteMapping("/{id}")
-    public ResponseEntity<String>  deletePerson(@PathVariable("id") Long iDEmployee){
-           personService.deletePerson(iDEmployee);
-        return ResponseEntity.ok("Deleting is done");
+    @DeleteMapping("deletePerson/{id}")
+    public ResponseEntity<ApiResponse> deletePerson(@PathVariable("id") Long iDEmployee) {
+        try {
+            personService.deletePerson(iDEmployee);
+            return ResponseEntity.ok(new ApiResponse(true, "Deleting is done"));
+        } catch (NoSuchElementException ex) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(new ApiResponse(false, ex.getMessage()));
+        }
     }
 
-}
+    @PostMapping("changePassword/{idPerson}")
+    public ResponseEntity<ApiResponse> changePassword(@PathVariable("idPerson") Long idPerson, @RequestBody changePasswordDTO changePasswordDTO) {
+        try {
+            List<String> validationErrors = personService.checkPassword(changePasswordDTO.getNewPassword());
+            if (!validationErrors.isEmpty()) {
+                String errorMessage = String.join(", ", validationErrors);
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(new ApiResponse(false, errorMessage));
+            }
+            personService.changePassword(idPerson, changePasswordDTO);
+            return ResponseEntity.ok(new ApiResponse(true, "Password successfully updated."));
+        } catch (NoSuchElementException ex) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(new ApiResponse(false, ex.getMessage()));
+        }
+        catch (PasswordUpdateException ex) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new ApiResponse(false, ex.getMessage()));
+        }
+    }
+
+
+    }
+
 
 /*
         if (personService.logIn(loginDTO).isPresent()) {

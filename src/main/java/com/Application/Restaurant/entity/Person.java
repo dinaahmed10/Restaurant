@@ -24,4 +24,5 @@ import lombok.Setter;
         private String password;
        // @Column(name="email_id",nullable = false ,unique = true)
         private String email;
+        private String bio;
 }

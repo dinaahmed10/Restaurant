@@ -1,8 +1,7 @@
 package com.Application.Restaurant.Service.Impl;
 
-import com.Application.Restaurant.DTO.PersonDTO;
-import com.Application.Restaurant.DTO.loginDTO;
-import com.Application.Restaurant.DTO.singUpDTO;
+import com.Application.Restaurant.DTO.*;
+import com.Application.Restaurant.Exception.PasswordUpdateException;
 import com.Application.Restaurant.entity.Person;
 import com.Application.Restaurant.Mapper.PersonMapper;
 import com.Application.Restaurant.Repository.personRepository;
@@ -12,7 +11,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
+import java.util.NoSuchElementException;
 
 @Service
 @AllArgsConstructor
@@ -23,9 +22,11 @@ public class PersonServiceImpl implements personService {
     public List<Object> signUp(singUpDTO singUpDTO) {
         List<Object> myList = new ArrayList<>();
         Person Person = new Person();
+        Person.setBio(singUpDTO.getBio());
 
         ////////////////////////////  Username   /////////////////////////////
         if (singUpDTO.getUsername().isEmpty()) {
+
             myList.add("Username cannot by empty");
         } else {
 
@@ -45,7 +46,7 @@ public class PersonServiceImpl implements personService {
                     && !singUpDTO.getUsername().matches(".*[@$#^()_.!%*?&].*")) {
 
                 Person.setUsername(singUpDTO.getUsername());
-                myList.add("Username is Valid");
+
             }
 
 
@@ -58,35 +59,13 @@ public class PersonServiceImpl implements personService {
         if (singUpDTO.getPassword().isEmpty()) {
             myList.add("Password cannot by empty");
         } else {
-            if (singUpDTO.getPassword().length() >= 8 && singUpDTO.getPassword().length() <= 20
-                    && singUpDTO.getPassword().matches(".*[A-Z].*")
-                    && singUpDTO.getPassword().matches(".*[a-z].*")
-                    && singUpDTO.getPassword().matches(".*[0-9].*")
-                    && singUpDTO.getPassword().matches(".*[!@#$%^&*()_+\\-=\\[\\]{};':\\\"\\|,.<>/?].*")
-
-            ) {
+            if (isCheckPassword(singUpDTO.getPassword())) {
                 Person.setPassword(singUpDTO.getPassword());
-                myList.add("Password is Valid");
-            }
 
-            if (singUpDTO.getPassword().length() <= 8 && singUpDTO.getPassword().length() <= 20) {
-                myList.add("Password length must be between 8 and 20 characters in length");
             }
-
-            if (!(singUpDTO.getPassword().matches(".*[0-9].*"))) {
-                myList.add("Password must contain numbers");
+            else{
+                checkPassword(singUpDTO.getPassword());
             }
-            if ((!singUpDTO.getPassword().matches(".*[@$#^()+=_.!%*?&].*"))) {
-                myList.add("Password must contain special Charter");
-            }
-            if ((!singUpDTO.getPassword().matches(".*[a-z].*"))) {
-                myList.add("Password must contain at least one lowercase letter");
-            }
-            if ((!singUpDTO.getPassword().matches(".*[A-Z].*"))) {
-                myList.add("Password must contain at least one uppercase letter");
-            }
-
-
         }
 
 
@@ -99,7 +78,7 @@ public class PersonServiceImpl implements personService {
             } else {
                 if (singUpDTO.getEmail().matches("^[a-zA-Z0-9]+@gmail\\.com$")) {
                     Person.setEmail(singUpDTO.getEmail());
-                    myList.add("Email is Valid");
+
                 } else {
                     myList.add("Email is must end with @gmail.com and contain only uppercase[A-Z] and lowercase[a-z] letters and numbers[0-9]");
                 }
@@ -116,7 +95,7 @@ public class PersonServiceImpl implements personService {
                     personRepository.save(Person);
                     PersonDTO PersonDTO = PersonMapper.mapToPersonDTO(Person);
                     myList.add(PersonDTO);
-                    myList.add("ConfirmPassword is Valid");
+
                 }
             } else {
                 myList.add("Passwords do not match");
@@ -130,6 +109,7 @@ public class PersonServiceImpl implements personService {
 
         return myList;
     }
+
     @Override
     public List<Object> logIn(loginDTO loginDTO) {
         List<Object> myList = new ArrayList<>();
@@ -151,7 +131,7 @@ public class PersonServiceImpl implements personService {
                         myList.add(PersonMapper.mapToPersonDTO(Person));
 
                     } else {
-                        myList.add("Password is incorrect");
+                        myList.add("Password is incorrect,please try again");
                     }
                 }
 
@@ -172,8 +152,8 @@ public class PersonServiceImpl implements personService {
 
 
     @Override
-    public PersonDTO getPersonByID(Long id) {
-        Person Person = personRepository.findById(id).orElseThrow();
+    public PersonDTO readPerson(Long id) {
+        Person Person = personRepository.findById(id).orElseThrow(() -> new NoSuchElementException("Person with ID " + id + " not found"));
         return PersonMapper.mapToPersonDTO(Person);
     }
 
@@ -189,23 +169,78 @@ public class PersonServiceImpl implements personService {
     }
 
     @Override
-    public PersonDTO updatePerson(Long id, PersonDTO PersonDTO) {
-        Person Person = PersonMapper.mapToPerson(getPersonByID(id));
-        Person.setUsername(PersonDTO.getUsername());
-        Person.setPassword(PersonDTO.getPassword());
-        Person.setEmail(PersonDTO.getEmail());
+    public void updatePerson(Long id, updatePersonDTO updatePersonDTO) {
+        Person Person = PersonMapper.mapToPerson(readPerson(id));
+        Person.setUsername(updatePersonDTO.getUsername());
+        Person.setBio(updatePersonDTO.getBio());
+        Person.setEmail(updatePersonDTO.getEmail());
         personRepository.save(Person);
-        return PersonMapper.mapToPersonDTO(Person);
     }
 
     @Override
     public void deletePerson(Long id) {
-        Person Person = PersonMapper.mapToPerson(getPersonByID(id));
-        personRepository.delete(Person);
+       // Person Person = PersonMapper.mapToPerson(getPersonByID(id));
+        Person person = personRepository.findById(id).orElseThrow(() -> new NoSuchElementException("Person with ID " + id + " not found"));
+        personRepository.delete(person);
 
     }
 
+    @Override
+    public void changePassword(Long idPerson, changePasswordDTO changePasswordDTO) {
+        Person person = personRepository.findById(idPerson).orElseThrow(() -> new NoSuchElementException("Person with ID " + idPerson + " not found"));
+        if (changePasswordDTO.getOldPassword().equals(person.getPassword())) {
+            if (changePasswordDTO.getNewPassword().equals(changePasswordDTO.getConfirmNewPassword())) {
+                if (isCheckPassword(changePasswordDTO.getNewPassword())) {
+                    person.setPassword(changePasswordDTO.getNewPassword());
+                    personRepository.save(person);
+                } else {
+                    checkPassword(changePasswordDTO.getNewPassword());
+                }
 
+            } else {
+                throw new PasswordUpdateException("New password and ConfirmNewPassword do not match.");
+            }
+        } else {
+            throw new PasswordUpdateException("Old password is incorrect.");
+        }
+
+    }
+
+    public boolean isCheckPassword(String password) {
+        if (password.length() >= 8 && password.length() <= 20
+                && password.matches(".*[A-Z].*")
+                && password.matches(".*[a-z].*")
+                && password.matches(".*[0-9].*")
+                && password.matches(".*[!@#$%^&*()_+\\-=\\[\\]{};':\\\"\\|,.<>/?].*")
+
+        ) {
+            return true;
+        }
+
+        return false;
+    }
+
+    public List<String>  checkPassword(String password) {
+        List<String> errors = new ArrayList<>();
+        if (password.length() <= 8 && password.length() <= 20) {
+            errors.add("Password length must be between 8 and 20 characters in length");
+        }
+
+        if (!(password.matches(".*[0-9].*"))) {
+            errors.add("Password must contain numbers");
+        }
+        if ((!password.matches(".*[@$#^()+=_.!%*?&].*"))) {
+            errors.add("Password must contain special Charter");
+        }
+        if ((!password.matches(".*[a-z].*"))) {
+            errors.add("Password must contain at least one lowercase letter");
+        }
+        if ((!password.matches(".*[A-Z].*"))) {
+            errors.add("Password must contain at least one uppercase letter");
+        }
+
+        return errors;
+    }
 }
 
      /*   Optional<Person> person = personRepository.findByEmailAndPassword(loginDTO.getEmail(), loginDTO.getPassword());

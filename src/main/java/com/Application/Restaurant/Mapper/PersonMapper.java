@@ -10,7 +10,8 @@ public class PersonMapper {
                Person.getId(),
                Person.getUsername(),
                Person.getPassword(),
-               Person.getEmail()
+               Person.getEmail(),
+               Person.getBio()
 
 
 
@@ -22,7 +23,8 @@ public class PersonMapper {
                 PersonDTO.getId(),
                 PersonDTO.getUsername(),
                 PersonDTO.getPassword(),
-                PersonDTO.getEmail()
+                PersonDTO.getEmail(),
+                PersonDTO.getBio()
         );
     }
 

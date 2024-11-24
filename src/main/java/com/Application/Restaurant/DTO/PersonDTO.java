@@ -14,4 +14,5 @@ public class PersonDTO {
     private String username;
     private String password;
     private String email;
+    private String bio;
 }
